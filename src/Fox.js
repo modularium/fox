@@ -36,13 +36,15 @@ class FoxDispatcher extends EventEmitter {
    * @public
    */
   async add (cmd) {
-    cmd.usage = cmd.usage.map(arg => {
-      if (arg.required === undefined) {
-        arg.required = true
-      }
-
-      return arg
-    })
+    if (cmd.args) {
+      cmd.args = cmd.args.map(arg => {
+        if (arg.required === undefined) {
+          arg.required = true
+        }
+  
+        return arg
+      })
+    }
     const command = new FoxCommand(cmd)
     if (FoxCommand.isOld(cmd)) throw new FoxError(command.base + ' is old-typed command. Please, rename [name, description, usage] -> [base, info, args]\nOr, you could use FoxCommand.rebase()')
     await this._commands.set(command.base, command)
@@ -126,11 +128,11 @@ class FoxDispatcher extends EventEmitter {
 
     if (cmd) {
       if (!cmd.off) {
-        if (!cmd.usage) {
+        if (!cmd.args) {
           msg ? await cmd.execute(msg, args) : await cmd.execute(args)
         } else {
           try {
-            const parsedArgs = await this.parser.parse(args, cmd.usage)
+            const parsedArgs = await this.parser.parse(args, cmd.args)
             msg ? await cmd.execute(msg, parsedArgs) : await cmd.execute(parsedArgs)
           } catch (e) {
             if (e instanceof KitsuneParserError) {
@@ -243,7 +245,7 @@ class FoxCommand {
     const toRequiredType = name => '<' + name + '>'
     const toNotRequiredType = name => '[' + name + ']'
 
-    const keyNames = this.usage.map(({ type, required, count, name: keyName }) => {
+    const keyNames = this.args.map(({ type, required, count, name: keyName }) => {
       let name = keyName || type
 
       if (Array.isArray(type)) {

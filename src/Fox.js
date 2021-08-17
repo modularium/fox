@@ -24,7 +24,7 @@ class FoxDispatcher extends EventEmitter {
     this._commands = new Collection()
     /**
      * KitsuneParser
-     * 
+     *
      * @since modularium/fox:0.2.0
      */
     this.parser = new KitsuneParser()
@@ -55,7 +55,7 @@ class FoxDispatcher extends EventEmitter {
    * @param {function} commandExecutor Command executor
    * @public
    */
-   async addSimple (commandName, commandDesciption, commandExecutor) {
+  async addSimple (commandName, commandDesciption, commandExecutor) {
     if (!(typeof commandExecutor === 'function')) {
       throw new FoxError('Command executor is not a function!')
     }
@@ -64,7 +64,7 @@ class FoxDispatcher extends EventEmitter {
       base: commandName,
       info: commandDesciption,
       execute: commandExecutor
-    }) 
+    })
   }
 
   /**
@@ -102,12 +102,12 @@ class FoxDispatcher extends EventEmitter {
    * @returns {FoxCommand} Command
    * @public
    */
-   async findLowerCase (command) {
+  async findLowerCase (command) {
     const cmd = await this._commands.find(cmd => {
       if (cmd.aliases) {
         return cmd.base.toLowerCase() === command.toLowerCase() || cmd.aliases.map(v => v.toLowerCase()).includes(command.toLowerCase())
       }
-      
+
       return cmd.base.toLowerCase() === command.toLowerCase()
     })
 
@@ -123,9 +123,9 @@ class FoxDispatcher extends EventEmitter {
    */
   async use (command, args, msg) {
     const cmd = await this.find(command)
-    
+
     if (cmd) {
-      if (!cmd.off) { 
+      if (!cmd.off) {
         if (!cmd.usage) {
           msg ? await cmd.execute(msg, args) : await cmd.execute(args)
         } else {
@@ -140,7 +140,7 @@ class FoxDispatcher extends EventEmitter {
             }
           }
         }
-        
+
         return args
       }
 
@@ -181,11 +181,10 @@ class FoxDispatcher extends EventEmitter {
     const args = commandToParse.split(/ +/)
     const command = args.shift().toLowerCase()
     args.forEach((val, i) => {
-        if (Number(val)) args[i] = Number(val)
-        else return
+      if (Number(val)) args[i] = Number(val)
     })
     return [command, args]
-}
+  }
 
   /**
    * Turn on/off a command, using it's base
@@ -238,24 +237,24 @@ class FoxCommand {
     return rebasedCmd
   }
 
-  getUsage() {
-    if(!this.usage) return undefined
+  getUsage () {
+    if (!this.usage) return undefined
 
     const toRequiredType = name => '<' + name + '>'
     const toNotRequiredType = name => '[' + name + ']'
 
     const keyNames = this.usage.map(({ type, required, count, name: keyName }) => {
-        let name = keyName ? keyName : type
+      let name = keyName || type
 
-        if (Array.isArray(type)) {
-            name = keyName ? keyName : type.join('|')
-        }
+      if (Array.isArray(type)) {
+        name = keyName || type.join('|')
+      }
 
-        if (count) {
-            name += ':' + count
-        }
+      if (count) {
+        name += ':' + count
+      }
 
-        return required ? toRequiredType(name) : toNotRequiredType(name)
+      return required ? toRequiredType(name) : toNotRequiredType(name)
     })
 
     return keyNames.join(' ')

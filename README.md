@@ -1,3 +1,3 @@
 # fox
 
-A command library used in [modularium](https://github.com/redcarti/modularium)
+A command library used in [@modularium/discord](https://github.com/modularium/discord)

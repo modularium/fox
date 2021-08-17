@@ -1,9 +1,7 @@
-const { FoxDispatcher, FoxError, FoxCommand } = require('./src/Fox')
-const { FoxBetaDispatcher } = require('./src/Beta')
+const Fox = require('./src/Fox')
+const Kitsune = require('./src/Kitsune')
 
 module.exports = {
-    FoxDispatcher,
-    FoxBetaDispatcher,
-    FoxCommand, 
-    FoxError
+    ...Fox,
+    ...Kitsune
 }

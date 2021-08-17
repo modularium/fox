@@ -1,10 +1,9 @@
 {
   "name": "@modularium/fox",
-  "version": "0.1.7",
+  "version": "0.2.0",
   "description": "A command parser library used in modularium",
   "main": "index.js",
   "scripts": {
-    "test": "jest test/ --verbose --runInBand",
     "fix": "standard --fix src/**/*.js",
     "lint": "standard src/**/*.js"
   },
@@ -24,11 +23,10 @@
   "bugs": "https://github.com/modularium/fox/issues",
   "license": "MIT",
   "devDependencies": {
-    "jest": "^26.1.0",
     "standard": "^16.0.3"
   },
   "dependencies": {
-    "@discordjs/collection": "^0.1.6"
+    "@discordjs/collection": "^0.2.1"
   },
   "repository": {
     "type": "git",

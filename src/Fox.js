@@ -1,5 +1,6 @@
 const Collection = require('@discordjs/collection')
 const { EventEmitter } = require('events')
+const { KitsuneParser, KitsuneParserError } = require('./Kitsune')
 
 class FoxError extends Error {
   constructor (message) {
@@ -16,11 +17,17 @@ class FoxDispatcher extends EventEmitter {
    * @class
    * @constructor
    * @public
-   * @since modularium/0.1.15.2
+   * @since modularium/discord:0.1.15.2
    */
   constructor () {
     super()
     this._commands = new Collection()
+    /**
+     * KitsuneParser
+     * 
+     * @since modularium/fox:0.2.0
+     */
+    this.parser = new KitsuneParser()
   }
 
   /**
@@ -29,8 +36,15 @@ class FoxDispatcher extends EventEmitter {
    * @public
    */
   async add (cmd) {
+    cmd.usage = cmd.usage.map(arg => {
+      if (arg.required === undefined) {
+        arg.required = true
+      }
+
+      return arg
+    })
     const command = new FoxCommand(cmd)
-    if (FoxCommand.isOld(cmd)) throw new FoxError((command.base.xb16 ? command.base.xb16 : command.base) + ' is old-typed command. Please, rename [name, description, args] -> [base, info, usage]\nOr, you could use FoxCommand.rebase()')
+    if (FoxCommand.isOld(cmd)) throw new FoxError(command.base + ' is old-typed command. Please, rename [name, description, usage] -> [base, info, args]\nOr, you could use FoxCommand.rebase()')
     await this._commands.set(command.base, command)
   }
 
@@ -109,28 +123,41 @@ class FoxDispatcher extends EventEmitter {
    */
   async use (command, args, msg) {
     const cmd = await this.find(command)
-
+    
     if (cmd) {
       if (!cmd.off) { 
-        msg ? await cmd.execute(msg, args) : await cmd.execute(args)
+        if (!cmd.usage) {
+          msg ? await cmd.execute(msg, args) : await cmd.execute(args)
+        } else {
+          try {
+            const parsedArgs = await this.parser.parse(args, cmd.usage)
+            msg ? await cmd.execute(msg, parsedArgs) : await cmd.execute(parsedArgs)
+          } catch (e) {
+            if (e instanceof KitsuneParserError) {
+              msg ? await cmd.onParserError(msg, args, e.value, e.index) : await cmd.onParserError(args, e.value, e.index)
+            } else {
+              throw e
+            }
+          }
+        }
         
         return args
-      } else { 
-        throw new FoxError({
-          code: 'off',
-          command,
-          msg,
-          args
-        })
       }
-    } else {
+
       throw new FoxError({
-        code: '404',
+        code: 'off',
         command,
         msg,
         args
       })
     }
+
+    throw new FoxError({
+      code: '404',
+      command,
+      msg,
+      args
+    })
   }
 
   /**
@@ -153,8 +180,12 @@ class FoxDispatcher extends EventEmitter {
   async parse (commandToParse) {
     const args = commandToParse.split(/ +/)
     const command = args.shift().toLowerCase()
+    args.forEach((val, i) => {
+        if (Number(val)) args[i] = Number(val)
+        else return
+    })
     return [command, args]
-  }
+}
 
   /**
    * Turn on/off a command, using it's base
@@ -170,28 +201,29 @@ class FoxDispatcher extends EventEmitter {
 }
 
 class FoxCommand {
-  constructor ({ base, info, emoji, usage, off, execute, parse, aliases }) {
+  constructor ({ base, info, emoji, args, off, execute, parse, aliases, onParserError }) {
     if (!base || !execute) throw new FoxError('No base or execute()')
 
     this.base = base
     this.info = info
     this.emoji = emoji
-    this.usage = usage
+    this.args = args
     this.off = off
     this.execute = execute
     this.parse = parse
     this.aliases = aliases
+    this.onParserError = onParserError
   }
 
   static isOld (cmd) {
-    if (cmd.name || cmd.description || cmd.args) return true
+    if (cmd.name || cmd.description || cmd.usage) return true
     else return false
   }
 
   /**
    * Rebase old type command to new type
-   * @param {{ name:string, description:string, args:Array<string> }} cmd Command object
-   * @returns {{ base:string, info:string, usage:Array<string> }} rebasedCmd
+   * @param {{ name:string, description:string, usage:Array<string> }} cmd Command object
+   * @returns {{ base:string, info:string, args:Array<string> }} rebasedCmd
    */
   static rebase (cmd) {
     const rebasedCmd = {}
@@ -199,11 +231,34 @@ class FoxCommand {
     Object.entries(cmd).forEach(([key, val]) => {
       if (key === 'name') rebasedCmd.base = val
       else if (key === 'description') rebasedCmd.info = val
-      else if (key === 'args') rebasedCmd.usage = val
+      else if (key === 'usage') rebasedCmd.args = val
       else rebasedCmd[key] = val
     })
 
     return rebasedCmd
+  }
+
+  getUsage() {
+    if(!this.usage) return undefined
+
+    const toRequiredType = name => '<' + name + '>'
+    const toNotRequiredType = name => '[' + name + ']'
+
+    const keyNames = this.usage.map(({ type, required, count, name: keyName }) => {
+        let name = keyName ? keyName : type
+
+        if (Array.isArray(type)) {
+            name = keyName ? keyName : type.join('|')
+        }
+
+        if (count) {
+            name += ':' + count
+        }
+
+        return required ? toRequiredType(name) : toNotRequiredType(name)
+    })
+
+    return keyNames.join(' ')
   }
 }
 

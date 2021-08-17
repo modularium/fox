@@ -1,4 +1,4 @@
-const Collection = require('@discordjs/collection')
+const { Collection } = require('@discordjs/collection')
 const { EventEmitter } = require('events')
 const { KitsuneParser, KitsuneParserError } = require('./Kitsune')
 

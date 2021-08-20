@@ -26,7 +26,8 @@
     "standard": "^16.0.3"
   },
   "dependencies": {
-    "@discordjs/collection": "^0.2.1"
+    "@discordjs/collection": "^0.2.1",
+    "@modularium/kitsune": "^0.1.0"
   },
   "repository": {
     "type": "git",

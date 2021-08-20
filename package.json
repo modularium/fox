@@ -1,6 +1,6 @@
 {
   "name": "@modularium/fox",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "A command parser library used in modularium",
   "main": "index.js",
   "scripts": {

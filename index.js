@@ -231,7 +231,7 @@ class FoxCommand {
     }
 
     getUsage () {
-        if (!this.usage) return undefined
+        if (!this.args) return undefined
 
         const toRequiredType = name => '<' + name + '>'
         const toNotRequiredType = name => '[' + name + ']'
